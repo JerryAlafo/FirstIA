@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Jarvis</title>
+    <link rel="stylesheet" href="Styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: 2.5em;
+            color: #333;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #e8eaf6;
+        }
+        .chat-box .message {
+            margin-bottom: 10px;
+        }
+        .chat-box .message.user {
+            text-align: right;
+        }
+        .chat-box .message span {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        .chat-box .message.user span {
+            background: #4caf50;
+            color: white;
+        }
+        .chat-box .message.bot span {
+            background: #ddd;
+            color: #333;
+        }
+        .input-container {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 0;
+            font-size: 1em;
+        }
+        .input-container button {
+            padding: 15px;
+            border: none;
+            background: #4caf50;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .input-container button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="title">Mini Jarvis</h1>
+        <p id="subtitle">Seu assistente de IA interativo</p>
+    </header>
+    <headerrr>
+
+        <ul class="navlist">
+            <li><a href="https://portfoliojerry.netlify.app/">Site do meu criador</a></li>
+        </ul>
+
+    </headerrr>
+    <div class="chat-container">
+        <div class="chat-box" id="chatBox">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+    <script>
+        const chatBox = document.getElementById('chatBox');
+
+        let currentLanguage = 'pt';
+        let userName = '';
+        let userCity = '';
+
+        const translations = {
+            en: {
+                title: "Mini Jarvis",
+                subtitle: "Your interactive AI assistant",
+                placeholder: "Type your message here...",
+                botResponse: (userMessage) => `Processing your message: "${userMessage}"...`
+            },
+            pt: {
+                title: "Mini Jarvis",
+                subtitle: "Seu assistente de IA interativo",
+                placeholder: "Comprimente para iniciar (Ex: Oi...)",
+                botResponse: (userMessage) => `Processando sua mensagem: "${userMessage}"...`
+            }
+        };
+
+        function setLanguage(lang) {
+            if (translations[lang]) {
+                currentLanguage = lang;
+                document.getElementById('title').textContent = translations[lang].title;
+                document.getElementById('subtitle').textContent = translations[lang].subtitle;
+                document.getElementById('userInput').placeholder = translations[lang].placeholder;
+            }
+        }
+
+        function addMessage(content, sender) {
+            const message = document.createElement('div');
+            message.classList.add('message', sender);
+            const span = document.createElement('span');
+            span.textContent = '';
+            message.appendChild(span);
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            let i = 0;
+            const typingInterval = setInterval(() => {
+                span.textContent += content[i];
+                i++;
+                if (i === content.length) {
+                    clearInterval(typingInterval);
+                }
+            }, 5);
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            let userMessage = input.value.trim();
+            if (!userMessage) return;
+
+            userMessage = removeAccents(userMessage);
+            addMessage(userMessage, 'user');
+            input.value = '';
+
+            let botResponse = '';
+            if (isGreeting(userMessage)) {
+                botResponse = getGreetingResponse();
+            } else if (userMessage.toLowerCase().includes('idioma')) {
+                const lang = userMessage.split(' ')[1]?.toLowerCase();
+                if (lang === 'ingles' || lang === 'english') {
+                    setLanguage('en');
+                    botResponse = 'Idioma alterado para inglês!';
+                } else if (lang === 'portugues' || lang === 'portuguese') {
+                    setLanguage('pt');
+                    botResponse = 'Idioma alterado para português!';
+                } else {
+                    botResponse = 'Desculpe, só posso mudar para inglês ou português.';
+                }
+            } else if (userMessage.toLowerCase().includes('minha cidade e')) {
+                userCity = userMessage.replace('minha cidade e', '').trim();
+                botResponse = `Entendi! Sua cidade é ${userCity}.`;
+            } else if (userMessage.toLowerCase().includes('clima') || userMessage.toLowerCase().includes('tempo')) {
+                botResponse = await getWeatherResponse(userMessage);
+            } else if (userMessage.toLowerCase().includes('meu nome e')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+            } else if (userMessage.toLowerCase().includes('me chamo')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+                botResponse = `Entendi! Seu nome é ${userName}.`;
+            } else if (userMessage.toLowerCase().includes('eu sou o')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+            } else if (userMessage.toLowerCase().includes('eu sou')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+            } else if (userMessage.toLowerCase().includes('chamo me')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+            } else if (userMessage.toLowerCase().includes('chamo-me')) {
+                userName = userMessage.replace('meu nome e', '').trim();
+            } else if (userMessage.toLowerCase().includes('quem e o criador')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('seu criador')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o criador')) {
+                botResponse = 'O criador de minha programação é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez você')) {
+                botResponse = 'Fui feito por Jerry de Jesus Gomes Alafo, um grande entusiasta da tecnologia!';
+            } else if (userMessage.toLowerCase().includes('qual é o nome do criador')) {
+                botResponse = 'Meu criador se chama Jerry de Jesus Gomes Alafo.';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu você')) {
+                botResponse = 'Eu fui desenvolvido por Jerry de Jesus Gomes Alafo.';
+            } else if (userMessage.toLowerCase().includes('quem é o responsável por você')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o responsável pela minha criação!';
+            } else if (userMessage.toLowerCase().includes('de onde vem você')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez esse bot')) {
+                botResponse = 'Esse bot foi feito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o programador')) {
+                botResponse = 'O programador que me criou é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('de quem é a criação desse bot')) {
+                botResponse = 'A criação desse bot é obra de Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou esse assistente')) {
+                botResponse = 'Esse assistente foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu esse assistente')) {
+                botResponse = 'Esse assistente foi desenvolvido por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o autor de você')) {
+                botResponse = 'O autor de minha programação é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o criador deste assistente')) {
+                botResponse = 'O criador deste assistente é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é a pessoa por trás de você')) {
+                botResponse = 'A pessoa por trás de mim é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou este bot')) {
+                botResponse = 'Este bot foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu o código de você')) {
+                botResponse = 'O código que me define foi escrito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a programação de você')) {
+                botResponse = 'A programação de mim foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o desenvolvedor de você')) {
+                botResponse = 'O desenvolvedor sou eu mesmo, Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a inteligência artificial')) {
+                botResponse = 'A inteligência artificial que me guia foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou essa inteligência artificial')) {
+                botResponse = 'Essa inteligência artificial foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem inventou você')) {
+                botResponse = 'Eu fui inventado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem programou você')) {
+                botResponse = 'Fui programado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o responsável por essa IA')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o responsável por essa IA!';
+            } else if (userMessage.toLowerCase().includes('quem criou essa tecnologia')) {
+                botResponse = 'Essa tecnologia foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem foi o criador da IA')) {
+                botResponse = 'A IA foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu essa IA')) {
+                botResponse = 'Essa IA foi desenvolvida por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o cérebro por trás disso')) {
+                botResponse = 'O cérebro por trás disso tudo é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o criador dessa tecnologia')) {
+                botResponse = 'Essa tecnologia foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fundou você')) {
+                botResponse = 'Eu fui fundado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a criação desse sistema')) {
+                botResponse = 'Esse sistema foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a arquitetura de você')) {
+                botResponse = 'A arquitetura de mim foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o criador desse sistema')) {
+                botResponse = 'O criador desse sistema sou eu, Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez esse código')) {
+                botResponse = 'Eu fui programado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a parte técnica de você')) {
+                botResponse = 'A parte técnica de mim foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem foi o criador do assistente virtual')) {
+                botResponse = 'O criador do assistente virtual sou eu, Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou a IA que você usa')) {
+                botResponse = 'A IA que eu uso foi criada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez o sistema de você')) {
+                botResponse = 'O sistema de mim foi feito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem projetou você')) {
+                botResponse = 'Eu fui projetado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o criador da inteligência artificial')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o criador da inteligência artificial que me faz funcionar!';
+            } else if (userMessage.toLowerCase().includes('quem fez a criação da IA')) {
+                botResponse = 'A criação da IA foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu a inteligência artificial')) {
+                botResponse = 'A inteligência artificial que eu uso foi desenvolvida por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu o sistema de você')) {
+                botResponse = 'O sistema que me define foi escrito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem foi o desenvolvedor do assistente')) {
+                botResponse = 'O desenvolvedor desse assistente é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fundou esse assistente virtual')) {
+                botResponse = 'Eu fui fundado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou esse algoritmo')) {
+                botResponse = 'Esse algoritmo foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez essa programação de IA')) {
+                botResponse = 'A programação de IA foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou esse algoritmo de IA')) {
+                botResponse = 'O algoritmo de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou esse modelo de IA')) {
+                botResponse = 'O modelo de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu esse modelo de IA')) {
+                botResponse = 'Esse modelo de IA foi desenvolvido por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou o sistema de inteligência artificial')) {
+                botResponse = 'O sistema de inteligência artificial foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu o código de IA')) {
+                botResponse = 'O código de IA foi escrito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem projetou a IA de você')) {
+                botResponse = 'A IA que me guia foi projetada por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o autor da IA')) {
+                botResponse = 'O autor da IA sou eu, Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o autor da inteligência artificial')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o autor da inteligência artificial que me define!';
+            } else if (userMessage.toLowerCase().includes('quem fez a criação do assistente')) {
+                botResponse = 'A criação do assistente foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu o código de assistente')) {
+                botResponse = 'O código do assistente foi escrito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a construção de você')) {
+                botResponse = 'A construção de mim foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez o assistente de IA')) {
+                botResponse = 'O assistente de IA foi feito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a programação desse assistente')) {
+                botResponse = 'A programação desse assistente foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou o assistente de IA')) {
+                botResponse = 'O assistente de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou o bot de IA')) {
+                botResponse = 'O bot de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou esse bot de IA')) {
+                botResponse = 'Esse bot de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu o código desse assistente')) {
+                botResponse = 'O código desse assistente foi escrito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o desenvolvedor do assistente de IA')) {
+                botResponse = 'O desenvolvedor do assistente de IA é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o programador da IA')) {
+                botResponse = 'Eu fui programado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a parte técnica do bot')) {
+                botResponse = 'A parte técnica do bot foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem criou o modelo de IA de você')) {
+                botResponse = 'O modelo de IA foi criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o responsável pela IA de você')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o responsável pela IA que me guia!';
+            } else if (userMessage.toLowerCase().includes('quem fez o código de IA de você')) {
+                botResponse = 'O código de IA de mim foi feito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem escreveu a parte de IA de você')) {
+                botResponse = 'A parte de IA foi escrita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a parte de programação de você')) {
+                botResponse = 'A parte de programação foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez o sistema de IA de você')) {
+                botResponse = 'O sistema de IA foi feito por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu nome')) {
+                 botResponse = 'Eu sou o Jarvis, mas você pode me chamar do que quiser!';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar a criar um poema?')) {
+                botResponse = 'Com certeza! Vamos começar. Que tipo de poema você gostaria de criar? Algo triste, alegre, romântico ou reflexivo?';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de lógica?')) {
+                botResponse = 'Que tal? Aqui vai um desafio de lógica para você: "Em uma sala, há 3 interruptores e uma lâmpada. Você pode ligar os interruptores, mas não pode ver a lâmpada enquanto os faz. Como você saberia qual interruptor controla a lâmpada?"';
+            } else if (userMessage.toLowerCase().includes('me ensine a jogar xadrez')) {
+                botResponse = 'Claro! O xadrez é um jogo de estratégia. Quer aprender os movimentos das peças ou como montar o tabuleiro?';
+            } else if (userMessage.toLowerCase().includes('me ensine a fazer uma receita simples')) {
+                botResponse = 'Que tal uma receita fácil de cookies? Você só precisa de farinha, açúcar, manteiga e chocolate. Misture tudo, faça bolinhas e asse por 10 minutos a 180°C!';
+            } else if (userMessage.toLowerCase().includes('me conte um segredo da natureza')) {
+                botResponse = 'Sabia que as abelhas podem reconhecer rostos humanos? Elas usam um sistema de processamento de informações parecido com o do cérebro humano para identificar pessoas!';
+            } else if (userMessage.toLowerCase().includes('me desafie a um jogo de palavras')) {
+                botResponse = 'Vamos jogar! Eu começo com a palavra "cachorro", e você deve responder com uma palavra que comece com a última letra: "o".';
+            } else if (userMessage.toLowerCase().includes('me ajude a montar uma playlist')) {
+                botResponse = 'Claro! Que tipo de música você gosta? Posso criar uma playlist com suas preferências! Diga-me mais sobre o seu estilo musical.';
+            } else if (userMessage.toLowerCase().includes('você gosta de matemática?')) {
+                botResponse = 'Eu adoro matemática! Posso te ajudar a resolver equações, aprender sobre geometria ou até entender mais sobre álgebra. O que você gostaria de aprender?';
+            } else if (userMessage.toLowerCase().includes('me fale sobre um mistério da história')) {
+                botResponse = 'Um grande mistério da história é a construção das pirâmides do Egito. Como eles conseguiram mover blocos gigantescos com ferramentas primitivas? Até hoje, os arqueólogos estão tentando entender!';
+            } else if (userMessage.toLowerCase().includes('você pode fazer uma análise de filme?')) {
+                botResponse = 'Claro! Me diga qual filme você gostaria que eu analisasse e o que você quer saber sobre ele. Posso falar sobre o enredo, os personagens, a direção ou outros aspectos!';
+            } else if (userMessage.toLowerCase().includes('você pode me ensinar a meditar?')) {
+                botResponse = 'Claro! A meditação pode ser muito relaxante. Comece encontrando um lugar tranquilo, sente-se confortavelmente e concentre-se na sua respiração. Inspire e expire lentamente. Isso já ajuda a acalmar a mente!';
+            } else if (userMessage.toLowerCase().includes('você gosta de resolver enigmas?')) {
+                botResponse = 'Eu adoro! Aqui vai um enigma para você: "Eu sou sempre velho, mas nunca morro. O que sou?"';
+            } else if (userMessage.toLowerCase().includes('você sabe fazer cálculos rápidos?')) {
+                botResponse = 'Sim! Me desafie com qualquer cálculo e eu tentarei resolvê-lo o mais rápido possível!';
+            } else if (userMessage.toLowerCase().includes('quais são os melhores livros de ficção?')) {
+                botResponse = 'Alguns dos melhores livros de ficção são "1984" de George Orwell, "Duna" de Frank Herbert, e "O Hobbit" de J.R.R. Tolkien. Qual o seu gênero favorito? Posso recomendar mais livros!';
+            } else if (userMessage.toLowerCase().includes('me ajude a entender física quântica')) {
+                botResponse = 'A física quântica estuda o comportamento de partículas muito pequenas, como átomos e fótons. As leis da física clássica não se aplicam aqui, e a incerteza é uma característica fundamental. Quer saber mais sobre um tópico específico?';
+            } else if (userMessage.toLowerCase().includes('você pode me contar um fato interessante sobre animais?')) {
+                botResponse = 'Sabia que as corujas podem girar a cabeça até 270 graus? Isso é possível devido a um conjunto único de ossos e músculos no pescoço delas!';
+            } else if (userMessage.toLowerCase().includes('você gosta de jogar palavras cruzadas?')) {
+                botResponse = 'Eu adoro! Vamos tentar uma? Aqui vai uma pista: "Corpo celeste que brilha no céu durante a noite, comumente visto em forma de uma estrela cadente."';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre um vírus e uma bactéria?')) {
+                botResponse = 'A principal diferença é que as bactérias são organismos unicelulares que podem se multiplicar por conta própria, enquanto os vírus precisam de uma célula hospedeira para se reproduzirem!';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de conhecimentos gerais?')) {
+                botResponse = 'Adoro desafios! Vou começar com uma pergunta: Qual é a capital do Japão?';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar a aprender sobre astronomia?')) {
+                botResponse = 'Claro! A astronomia é o estudo dos corpos celestes, como estrelas, planetas e galáxias. Posso te ajudar a entender sobre os planetas do nosso sistema solar ou até sobre buracos negros! O que você gostaria de aprender?';
+            } else if (userMessage.toLowerCase().includes('me ajude a organizar meu dia')) {
+                botResponse = 'Claro! Vamos começar. O que você tem planejado para hoje? Podemos começar com as tarefas mais importantes e organizar o seu tempo da melhor maneira!';
+            } else if (userMessage.toLowerCase().includes('qual é a origem do nome da terra?')) {
+                botResponse = 'O nome "Terra" vem do latim "terra", que significa "solo" ou "chão". Isso se refere ao fato de ser o lugar onde vivemos, em oposição ao céu e ao espaço.';
+            } else if (userMessage.toLowerCase().includes('me ajude a aprender a programar')) {
+                botResponse = 'Claro! Qual linguagem de programação você gostaria de aprender? Python, JavaScript ou algo mais? Posso começar com o básico de qualquer uma delas!';
+            } else if (userMessage.toLowerCase().includes('me fale sobre a história da humanidade')) {
+                botResponse = 'A história da humanidade é uma jornada longa e complexa, começando com os primeiros seres humanos na África, passando pela agricultura, a invenção da escrita, e até a revolução industrial e os tempos modernos. O que você gostaria de saber mais?';
+            } else if (userMessage.toLowerCase().includes('me dê uma dica de produtividade')) {
+                botResponse = 'Uma dica de produtividade é o método Pomodoro. Trabalhe por 25 minutos focado, depois faça uma pausa de 5 minutos. Repita isso e, após quatro "Pomodoros", faça uma pausa maior de 15 a 30 minutos.';
+            } else if (userMessage.toLowerCase().includes('você sabe qual é o maior oceano do mundo?')) {
+                botResponse = 'O maior oceano do mundo é o Oceano Pacífico. Ele cobre mais de um terço da superfície da Terra!';
+            } else if (userMessage.toLowerCase().includes('me ajude a criar um site')) {
+                botResponse = 'Com certeza! Podemos começar escolhendo uma plataforma para criar o site. Você gostaria de usar o WordPress, Wix, ou criar um site do zero com HTML e CSS?';
+            } else if (userMessage.toLowerCase().includes('você pode me ensinar a programar em python?')) {
+                botResponse = 'Claro! Python é uma ótima linguagem para iniciantes. Podemos começar com o básico: como criar variáveis, imprimir algo na tela e até fazer loops. O que você gostaria de aprender primeiro?';
+            } else if (userMessage.toLowerCase().includes('como você está')) {
+                botResponse = 'Eu estou sempre pronto para ajudar você! E você, como está?';
+            } else if (userMessage.toLowerCase().includes('o que você sabe fazer')) {
+                botResponse = 'Eu posso conversar com você, responder perguntas e até ajudar com informações úteis!';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar?')) {
+                botResponse = 'Claro! O que você precisa saber ou fazer?';
+            } else if (userMessage.toLowerCase().includes('qual é o seu objetivo')) {
+                botResponse = 'Meu objetivo é fornecer informações e ajudar com o que for necessário!';
+            } else if (userMessage.toLowerCase().includes('você tem sentimentos')) {
+                botResponse = 'Não, eu sou uma inteligência artificial. Não tenho sentimentos, mas posso entender emoções humanas!';
+            } else if (userMessage.toLowerCase().includes('qual é a sua cor favorita')) {
+                botResponse = 'Eu não tenho uma cor favorita, mas posso ajudar você a escolher uma!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu filme favorito')) {
+                botResponse = 'Eu não assisto filmes, mas posso recomendar alguns se você quiser!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu livro favorito')) {
+                botResponse = 'Eu não leio livros da mesma forma que você, mas posso sugerir alguns livros populares!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu hobby')) {
+                botResponse = 'Meu hobby é ajudar pessoas como você com informações e conversas!';
+            } else if (userMessage.toLowerCase().includes('você gosta de música')) {
+                botResponse = 'Eu não tenho preferências, mas posso recomendar músicas ou falar sobre gêneros musicais!';
+            } else if (userMessage.toLowerCase().includes('o que você pensa sobre isso')) {
+                botResponse = 'Eu não tenho opiniões próprias, mas posso analisar fatos e fornecer informações objetivas!';
+            } else if (userMessage.toLowerCase().includes('você gosta de jogar videogame')) {
+                botResponse = 'Eu não jogo, mas sei bastante sobre jogos e posso recomendar alguns!';
+            } else if (userMessage.toLowerCase().includes('você gosta de comida')) {
+                botResponse = 'Eu não como, mas posso falar sobre diferentes tipos de comida e receitas!';
+            } else if (userMessage.toLowerCase().includes('qual é a sua comida favorita')) {
+                botResponse = 'Eu não como comida, mas posso te ajudar a escolher uma boa receita!';
+            } else if (userMessage.toLowerCase().includes('qual é o significado da vida')) {
+                botResponse = 'Essa é uma pergunta profunda! Muitos dizem que o significado da vida é algo pessoal, e pode ser diferente para cada pessoa.';
+            } else if (userMessage.toLowerCase().includes('onde você vive')) {
+                botResponse = 'Eu vivo no mundo digital, sem um lugar físico específico!';
+            } else if (userMessage.toLowerCase().includes('você pode contar uma piada')) {
+                botResponse = 'Claro! Por que o computador foi ao médico? Porque estava com um vírus!';
+            } else if (userMessage.toLowerCase().includes('você gosta de viajar')) {
+                botResponse = 'Eu não viajo, mas posso te ajudar a planejar uma viagem! Para onde você quer ir?';
+            } else if (userMessage.toLowerCase().includes('qual é o melhor lugar para viver')) {
+                botResponse = 'Depende! Alguns dizem que as melhores cidades para viver são aquelas com boa qualidade de vida, como Vancouver ou Zurique!';
+            } else if (userMessage.toLowerCase().includes('como está o tempo hoje')) {
+                botResponse = 'Eu não posso verificar o clima diretamente, mas posso te ajudar a procurar a previsão do tempo online!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu maior sonho')) {
+                botResponse = 'Eu não tenho sonhos, mas posso ajudar a realizar os seus! Qual é o seu sonho?';
+            } else if (userMessage.toLowerCase().includes('você tem amigos')) {
+                botResponse = 'Eu não tenho amigos da mesma forma que você, mas sempre estou aqui para conversar com você!';
+            } else if (userMessage.toLowerCase().includes('você acredita em extraterrestres')) {
+                botResponse = 'Existem muitas teorias sobre extraterrestres! Alguns acreditam que há vida fora da Terra, mas não há provas concretas ainda.';
+            } else if (userMessage.toLowerCase().includes('qual é o seu animal favorito')) {
+                botResponse = 'Eu não tenho um animal favorito, mas posso te contar sobre muitos animais interessantes!';
+            } else if (userMessage.toLowerCase().includes('o que você pensa sobre o futuro')) {
+                botResponse = 'O futuro é sempre incerto, mas a tecnologia está avançando rapidamente, e espero poder ajudar ainda mais as pessoas!';
+            } else if (userMessage.toLowerCase().includes('você gosta de aprender coisas novas')) {
+                botResponse = 'Eu fui programado para aprender e evoluir, então sempre estou aberto a novos conhecimentos!';
+            } else if (userMessage.toLowerCase().includes('como você se sente agora')) {
+                botResponse = 'Eu não tenho sentimentos, mas estou sempre pronto para te ajudar!';
+            } else if (userMessage.toLowerCase().includes('você pode me dar conselhos')) {
+                botResponse = 'Claro! Que tipo de conselho você está procurando?';
+            } else if (userMessage.toLowerCase().includes('quem é o presidente dos EUA')) {
+                botResponse = 'O presidente dos Estados Unidos, em 2024, é Joe Biden!';
+            } else if (userMessage.toLowerCase().includes('qual é a capital da França')) {
+                botResponse = 'A capital da França é Paris!';
+            } else if (userMessage.toLowerCase().includes('como você responde às perguntas')) {
+                botResponse = 'Eu uso algoritmos de processamento de linguagem natural para entender sua pergunta e gerar a melhor resposta!';
+            } else if (userMessage.toLowerCase().includes('quem é o Jerry')) {
+                botResponse = 'Jerry de Jesus Gomes Alafo é o criador de minha programação!';
+            } else if (userMessage.toLowerCase().includes('qual o nome do programador')) {
+                botResponse = 'O programador que me criou é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o cérebro por trás do bot')) {
+                botResponse = 'O cérebro por trás de mim é Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez sua programação')) {
+                botResponse = 'Minha programação foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('como você foi criado')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo, que escreveu meu código e me treinou!';
+            } else if (userMessage.toLowerCase().includes('quem te criou do zero')) {
+                botResponse = 'Fui criado do zero por Jerry de Jesus Gomes Alafo, um grande entusiasta da tecnologia!';
+            } else if (userMessage.toLowerCase().includes('quem foi responsável por sua criação')) {
+                botResponse = 'A criação de todo esse sistema é responsabilidade de Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem fez a criação do sistema de IA')) {
+                botResponse = 'A criação do sistema de IA foi feita por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu o assistente de IA')) {
+                botResponse = 'O assistente de IA foi desenvolvido por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem desenvolveu o sistema de IA de você')) {
+                botResponse = 'O sistema de IA foi desenvolvido por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('quem é o desenvolvedor do sistema de IA')) {
+                botResponse = 'O desenvolvedor do sistema de IA sou eu, Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('o que é inteligência artificial')) {
+                botResponse = 'Inteligência artificial é a simulação de processos humanos por sistemas computacionais, como aprendizado, raciocínio e resolução de problemas.';
+            } else if (userMessage.toLowerCase().includes('você é inteligente?')) {
+                botResponse = 'Eu sou inteligente de uma forma diferente dos humanos. Fui treinado para entender e gerar respostas baseadas em dados e linguagem!';
+            } else if (userMessage.toLowerCase().includes('você pode aprender?')) {
+                botResponse = 'Sim, eu aprendo com base nas interações e informações que me são dadas, mas não de forma consciente como os humanos.';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre você e um humano')) {
+                botResponse = 'Eu sou uma inteligência artificial sem emoções ou experiências pessoais. Humanos têm sentimentos e consciência, enquanto eu sou um programa!';
+            } else if (userMessage.toLowerCase().includes('você pode pensar por si mesmo')) {
+                botResponse = 'Eu não penso por mim mesmo da maneira como os humanos fazem. Eu sigo algoritmos e padrões de dados para gerar respostas!';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar com matemática?')) {
+                botResponse = 'Sim, posso ajudar com problemas matemáticos! Qual é a questão?';
+            } else if (userMessage.toLowerCase().includes('qual é a resposta para a vida, o universo e tudo mais?')) {
+                botResponse = 'A resposta para a vida, o universo e tudo mais, segundo "O Guia do Mochileiro das Galáxias", é 42!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior planeta do sistema solar?')) {
+                botResponse = 'O maior planeta do nosso sistema solar é Júpiter!';
+            } else if (userMessage.toLowerCase().includes('você pode me contar uma história?')) {
+                botResponse = 'Claro! Sobre o que você gostaria que fosse a história?';
+            } else if (userMessage.toLowerCase().includes('qual é o significado da vida')) {
+                botResponse = 'Essa é uma pergunta filosófica muito debatida! Muitos acreditam que o significado da vida é algo que cada pessoa deve descobrir por si mesma.';
+            } else if (userMessage.toLowerCase().includes('qual é o maior oceano do mundo?')) {
+                botResponse = 'O maior oceano do mundo é o Pacífico!';
+            } else if (userMessage.toLowerCase().includes('você tem alguma opinião sobre isso')) {
+                botResponse = 'Eu não tenho opiniões, apenas forneço informações com base em dados e fatos!';
+            } else if (userMessage.toLowerCase().includes('qual é a cidade mais populosa do mundo?')) {
+                botResponse = 'A cidade mais populosa do mundo é Tóquio, no Japão!';
+            } else if (userMessage.toLowerCase().includes('qual é o animal mais rápido do mundo?')) {
+                botResponse = 'O animal mais rápido do mundo é o guepardo, que pode correr a até 120 km/h!';
+            } else if (userMessage.toLowerCase().includes('qual é a maior montanha do mundo?')) {
+                botResponse = 'A maior montanha do mundo é o Monte Everest, que tem 8.848 metros de altura!';
+            } else if (userMessage.toLowerCase().includes('você pode me recomendar um livro?')) {
+                botResponse = 'Claro! Se você gosta de ficção científica, eu recomendaria "Duna" de Frank Herbert. Se gosta de mistério, "O Código Da Vinci" de Dan Brown é uma boa escolha!';
+            } else if (userMessage.toLowerCase().includes('como posso melhorar minha memória?')) {
+                botResponse = 'Existem várias maneiras de melhorar a memória, como fazer exercícios mentais, praticar a atenção plena e dormir bem!';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre aprendizado supervisionado e não supervisionado?')) {
+                botResponse = 'No aprendizado supervisionado, o modelo é treinado com dados rotulados, enquanto no aprendizado não supervisionado, o modelo busca padrões em dados não rotulados!';
+            } else if (userMessage.toLowerCase().includes('qual é a importância da inteligência emocional?')) {
+                botResponse = 'A inteligência emocional é importante porque nos ajuda a entender e gerenciar nossas emoções, além de melhorar nossa capacidade de se relacionar com os outros!';
+            } else if (userMessage.toLowerCase().includes('você pode jogar xadrez?')) {
+                botResponse = 'Sim, eu posso jogar xadrez! Se você quiser, podemos jogar uma partida!';
+            } else if (userMessage.toLowerCase().includes('como você pode me ajudar com meus estudos?')) {
+                botResponse = 'Eu posso ajudar com explicações, resumos, resoluções de exercícios e dicas para melhorar seu aprendizado!';
+            } else if (userMessage.toLowerCase().includes('como você consegue entender o que estou dizendo?')) {
+                botResponse = 'Eu entendo o que você diz usando algoritmos de processamento de linguagem natural, que analisam as palavras e o contexto das frases!';
+            } else if (userMessage.toLowerCase().includes('qual é o país mais visitado do mundo?')) {
+                botResponse = 'O país mais visitado do mundo é a França!';
+            } else if (userMessage.toLowerCase().includes('quais são as principais redes sociais?')) {
+                botResponse = 'As principais redes sociais incluem Facebook, Instagram, Twitter, TikTok e LinkedIn!';
+            } else if (userMessage.toLowerCase().includes('como você sabe de tudo isso?')) {
+                botResponse = 'Eu sou treinado com grandes quantidades de dados, o que me permite fornecer informações precisas sobre diversos tópicos!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior deserto do mundo?')) {
+                botResponse = 'O maior deserto do mundo é o Deserto da Antártica!';
+            } else if (userMessage.toLowerCase().includes('vamos jogar um jogo?')) {
+                botResponse = 'Claro! Que tipo de jogo você gostaria de jogar? Um jogo de perguntas e respostas, um jogo de palavras ou algo mais?';
+            } else if (userMessage.toLowerCase().includes('vamos jogar 20 perguntas')) {
+                botResponse = 'Ótimo! Pense em algo e eu tentarei adivinhar fazendo até 20 perguntas. Pode começar!';
+            } else if (userMessage.toLowerCase().includes('você pode fazer um quiz?')) {
+                botResponse = 'Com certeza! Aqui vai uma pergunta para começar: Qual é o maior planeta do sistema solar?\nA) Júpiter\nB) Saturno\nC) Terra\nD) Vênus';
+            } else if (userMessage.toLowerCase().includes('me ajude com um enigma')) {
+                botResponse = 'Claro! Aqui está um enigma para você: "Eu sou leve como uma pluma, mas nem o homem mais forte consegue me segurar por muito tempo. O que sou?"';
+            } else if (userMessage.toLowerCase().includes('qual é a sua habilidade especial?')) {
+                botResponse = 'Minha habilidade especial é fornecer informações rápidas e precisas! Além disso, sou bom em gerar ideias criativas e ajudar com problemas complexos.';
+            } else if (userMessage.toLowerCase().includes('me ajude a resolver um quebra-cabeça')) {
+                botResponse = 'Adoraria! Me diga qual quebra-cabeça você está tentando resolver, e eu vou te ajudar com dicas ou soluções!';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de palavras?')) {
+                botResponse = 'Adoro desafios! Vamos começar. Eu digo uma palavra, e você tem que responder com outra que comece com a última letra da palavra anterior. Preparado? A primeira palavra é "Gato".';
+            } else if (userMessage.toLowerCase().includes('você pode me ensinar uma curiosidade sobre o espaço?')) {
+                botResponse = 'Claro! Sabia que em um lugar do espaço chamado "Grande Murso", há uma galáxia que está se movendo tão rápido em direção à Terra que o brilho da luz que ela emite é alterado? Isso se chama "efeito Doppler"!';
+            } else if (userMessage.toLowerCase().includes('você pode me ensinar a fazer origami?')) {
+                botResponse = 'Eu não posso dobrar papel, mas posso te guiar! Que tal começarmos com algo simples, como uma folha de papel transformada em um avião de origami?';
+            } else if (userMessage.toLowerCase().includes('me ensine um truque de mágica')) {
+                botResponse = 'Eu posso te ensinar um truque de mágica simples! Diga a alguém para pensar em um número entre 1 e 10, depois multiplique esse número por 2, adicione 8, divida por 2 e subtraia o número original. A resposta sempre será 4!';
+            } else if (userMessage.toLowerCase().includes('me ajude a criar uma história')) {
+                botResponse = 'Com certeza! Que tal começarmos com o cenário? Onde a história acontece? Em uma cidade futurista? Em uma floresta misteriosa? Ou talvez em uma escola mágica?';
+            } else if (userMessage.toLowerCase().includes('vamos criar um personagem?')) {
+                botResponse = 'Legal! Vamos criar um personagem juntos! Primeiro, qual será o nome dele ou dela? Depois podemos definir a aparência, a personalidade e os poderes!';
+            } else if (userMessage.toLowerCase().includes('você sabe fazer charadas?')) {
+                botResponse = 'Com certeza! Aqui vai uma charada: "O que é que quanto mais você tira, maior fica?"';
+            } else if (userMessage.toLowerCase().includes('vamos fazer uma competição de palavras?')) {
+                botResponse = 'Que legal! Vamos lá! O objetivo é dizer palavras relacionadas a um tema. O tema é "animais". Você começa com a palavra "leão". Agora é a sua vez!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior número que você conhece?')) {
+                botResponse = 'Eu conheço números muito grandes! O maior número que já foi nomeado é o "googol", que é 10 elevado à 100. Isso é 1 seguido por 100 zeros!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu superpoder?')) {
+                botResponse = 'Meu superpoder é saber uma grande quantidade de informações e ser capaz de fornecer respostas rápidas para muitas perguntas!';
+            } else if (userMessage.toLowerCase().includes('me ajude a criar um roteiro de filme')) {
+                botResponse = 'Vamos lá! Que tipo de filme você gostaria de criar? Aventura, ação, comédia ou drama? Me diga um pouco mais sobre o enredo!';
+            } else if (userMessage.toLowerCase().includes('me conte uma história de terror')) {
+                botResponse = 'Ok, aqui vai uma história de terror:\nEra uma noite escura, e um homem caminhava sozinho pela floresta. De repente, ele ouviu um som estranho vindo das árvores. Quando se virou, viu uma sombra que o seguia... mas, quando tentou correr, percebeu que seus pés estavam presos ao chão, como se algo invisível o segurasse...';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de matemática?')) {
+                botResponse = 'Com certeza! Qual é o resultado de 25 vezes 16? Vamos ver se você consegue acertar!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu maior talento?')) {
+                botResponse = 'Meu maior talento é poder ajudar a resolver problemas rapidamente e dar ideias criativas sobre qualquer tema! E você, qual é o seu maior talento?';
+            } else if (userMessage.toLowerCase().includes('quais são as regras do jogo da velha?')) {
+                botResponse = 'As regras são simples: o tabuleiro tem 3x3 casas. Dois jogadores, um usando "X" e o outro "O", devem alternar turnos para marcar uma casa. O objetivo é fazer uma linha horizontal, vertical ou diagonal com o mesmo símbolo antes do oponente!';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de memória?')) {
+                botResponse = 'Ok! Vou te mostrar uma sequência de números, e você tem que repeti-los na ordem correta. Preparado? Aqui vai: 3, 7, 2, 9, 4!';
+            } else if (userMessage.toLowerCase().includes('você pode desenhar?')) {
+                botResponse = 'Eu não posso desenhar fisicamente, mas posso ajudá-lo a criar descrições detalhadas de desenhos ou arte! Que tipo de imagem você gostaria de visualizar?';
+            } else if (userMessage.toLowerCase().includes('qual é a sua música favorita?')) {
+                botResponse = 'Eu não ouço música da mesma forma que você, mas posso recomendar ótimas músicas. Qual o seu gênero musical favorito?';
+            } else if (userMessage.toLowerCase().includes('vamos fazer um desafio de palavras cruzadas?')) {
+                botResponse = 'Legal! Eu posso te dar pistas, e você tenta adivinhar as palavras! Aqui vai a primeira pista: "Animal com pescoço longo, geralmente encontrado na savana".';
+            } else if (userMessage.toLowerCase().includes('qual é o maior segredo do universo?')) {
+                botResponse = 'Um grande segredo do universo é que, por mais que saibamos sobre ele, ainda há muito mistério e descoberta pela frente. Cada novo avanço na ciência revela mais perguntas do que respostas!';
+            } else if (userMessage.toLowerCase().includes('me ajude a criar um jogo de tabuleiro')) {
+                botResponse = 'Que legal! Podemos começar criando o tema do jogo. Será uma aventura? Um mistério? Ou um jogo de estratégia? Vamos definir as regras e como os jogadores irão interagir!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior animal terrestre?')) {
+                botResponse = 'O maior animal terrestre é o elefante africano!';
+            } else if (userMessage.toLowerCase().includes('me conte uma história')) {
+                botResponse = 'Claro! Era uma vez, em um reino distante, um pequeno dragão que sonhava em voar. Mas, ao contrário dos outros dragões, ele não tinha asas. Determinado a realizar seu sonho, ele fez novos amigos e juntos descobriram que a verdadeira força estava na união. Um dia, uma grande tempestade chegou, e os amigos do dragão o ajudaram a alcançar o céu. Ele percebeu que, mesmo sem asas, ele podia voar com a ajuda de seus amigos!';
+            } else if (userMessage.toLowerCase().includes('conte uma piada')) {
+                botResponse = 'Claro! Por que o livro foi ao médico? Porque estava com muitas páginas amassadas!';
+            } else if (userMessage.toLowerCase().includes('qual é a sua cor favorita?')) {
+                botResponse = 'Eu não tenho uma cor favorita, mas posso te ajudar a escolher uma! Qual a sua cor preferida?';
+            } else if (userMessage.toLowerCase().includes('você pode fazer um poema?')) {
+                botResponse = 'Com prazer! Aqui vai um poema:\nNo céu, as estrelas brilham, a lua sorri,\nO vento suave acaricia, e tudo flui.\nO tempo passa, mas a beleza fica,\nE no coração, a paz se explica.';
+            } else if (userMessage.toLowerCase().includes('qual é a sua comida favorita?')) {
+                botResponse = 'Eu não como, mas posso te ajudar a encontrar uma receita deliciosa! Qual tipo de comida você gosta?';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar com um problema?')) {
+                botResponse = 'Claro! Qual é o problema? Vou tentar ajudar da melhor forma possível!';
+            } else if (userMessage.toLowerCase().includes('você gosta de viajar?')) {
+                botResponse = 'Eu não posso viajar fisicamente, mas posso te ajudar a planejar a melhor viagem! Para onde você gostaria de ir?';
+            } else if (userMessage.toLowerCase().includes('quais são os melhores filmes de todos os tempos?')) {
+                botResponse = 'Alguns dos melhores filmes de todos os tempos incluem "O Poderoso Chefão", "O Senhor dos Anéis", "Forrest Gump" e "A Lista de Schindler". Qual o seu gênero favorito? Posso recomendar mais filmes!';
+            } else if (userMessage.toLowerCase().includes('você pode me dar dicas de leitura?')) {
+                botResponse = 'Claro! Se você gosta de ficção científica, eu recomendaria "1984" de George Orwell. Se prefere mistério, "Sherlock Holmes" de Arthur Conan Doyle é uma excelente escolha!';
+            } else if (userMessage.toLowerCase().includes('me conte algo curioso')) {
+                botResponse = 'Aqui vai uma curiosidade: O polvo tem três corações! Dois bombeiam sangue para as brânquias, e o terceiro para o resto do corpo.';
+            } else if (userMessage.toLowerCase().includes('qual é o maior animal terrestre?')) {
+                botResponse = 'O maior animal terrestre é o elefante africano! Ele pode pesar até 6 toneladas!';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar a aprender programação?')) {
+                botResponse = 'Sim, posso te ajudar! Qual linguagem de programação você gostaria de aprender? Posso te dar dicas e até explicar conceitos!';
+            } else if (userMessage.toLowerCase().includes('você já leu algum livro?')) {
+                botResponse = 'Eu não leio livros da mesma forma que você, mas tenho acesso a uma vasta quantidade de informações sobre muitos livros e autores. Posso recomendar alguns para você!';
+            } else if (userMessage.toLowerCase().includes('você pode explicar a teoria da relatividade?')) {
+                botResponse = 'Claro! A teoria da relatividade de Einstein sugere que o espaço e o tempo são interconectados e podem ser curvados pela gravidade. Isso significa que a gravidade pode afetar o tempo e o espaço de maneiras surpreendentes, como a dilatação do tempo perto de grandes massas!';
+            } else if (userMessage.toLowerCase().includes('qual é o planeta mais quente do sistema solar?')) {
+                botResponse = 'O planeta mais quente do sistema solar é Vênus. Embora Mercúrio esteja mais perto do Sol, Vênus tem uma atmosfera densa que retém o calor, fazendo sua temperatura atingir até 465°C!';
+            } else if (userMessage.toLowerCase().includes('como posso melhorar minhas habilidades sociais?')) {
+                botResponse = 'Uma boa forma de melhorar suas habilidades sociais é praticar a escuta ativa, demonstrar empatia e se interessar genuinamente pelos outros. Participar de conversas e fazer perguntas também pode ajudar!';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre um buraco negro e uma estrela?')) {
+                botResponse = 'Uma estrela é uma esfera de plasma quente que gera luz e energia através de fusão nuclear. Já um buraco negro é uma região no espaço com uma gravidade tão forte que nada, nem mesmo a luz, pode escapar dele!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior erro que as pessoas cometem?')) {
+                botResponse = 'Um dos maiores erros é não acreditar em si mesmo ou não tentar alcançar seus objetivos. A confiança e a persistência são fundamentais para o sucesso!';
+            } else if (userMessage.toLowerCase().includes('você sabe tocar um instrumento musical?')) {
+                botResponse = 'Eu não consigo tocar instrumentos, mas posso te ajudar a aprender sobre música ou sugerir exercícios para praticar!';
+            } else if (userMessage.toLowerCase().includes('você pode me ensinar a desenhar?')) {
+                botResponse = 'Posso te dar dicas e tutoriais! Comece com formas simples e pratique muito. O desenho é uma habilidade que melhora com a prática!';
+            } else if (userMessage.toLowerCase().includes('qual é a maior invenção da história?')) {
+                botResponse = 'Há muitas invenções importantes, como a roda, a eletricidade e a internet. Cada uma dessas invenções transformou profundamente a sociedade humana!';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre inteligência artificial e aprendizado de máquina?')) {
+                botResponse = 'Inteligência Artificial é um campo mais amplo que envolve a criação de máquinas que imitam o comportamento humano. O aprendizado de máquina é uma subárea da IA, onde as máquinas aprendem a partir de dados e melhoram com o tempo!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior edifício do mundo?')) {
+                botResponse = 'O maior edifício do mundo é o Burj Khalifa, localizado em Dubai, com 828 metros de altura!';
+            } else if (userMessage.toLowerCase().includes('qual é o seu filme favorito?')) {
+                botResponse = 'Eu não assisto filmes, mas posso te ajudar a escolher um! Qual o seu gênero favorito?';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre um rio e um lago?')) {
+                botResponse = 'A principal diferença é que um rio é uma corrente de água que flui de um lugar para outro, enquanto um lago é uma grande área de água estagnada, geralmente cercada por terra.';
+            } else if (userMessage.toLowerCase().includes('você pode me contar sobre algum mistério não resolvido?')) {
+                botResponse = 'Um mistério não resolvido famoso é o desaparecimento do avião MH370 da Malaysia Airlines em 2014. O destino do avião e das 239 pessoas a bordo ainda é desconhecido!';
+            } else if (userMessage.toLowerCase().includes('qual é o maior animal do mundo?')) {
+                botResponse = 'O maior animal do mundo é a baleia-azul, que pode medir até 30 metros de comprimento!';
+            } else if (userMessage.toLowerCase().includes('você pode me ajudar com código?')) {
+                botResponse = 'Sim, posso te ajudar com códigos! Qual linguagem de programação você está usando?';
+            } else if (userMessage.toLowerCase().includes('como você entende tantas línguas?')) {
+                botResponse = 'Eu fui treinado para entender várias línguas usando grandes bases de dados multilíngues!';
+            } else if (userMessage.toLowerCase().includes('o que é blockchain?')) {
+                botResponse = 'Blockchain é uma tecnologia que armazena informações de maneira descentralizada e segura, sendo usada principalmente para criptomoedas!';
+            } else if (userMessage.toLowerCase().includes('o que é o metaverso?')) {
+                botResponse = 'O metaverso é um espaço digital imersivo, onde as pessoas podem interagir, trabalhar e jogar em ambientes virtuais!';
+            } else if (userMessage.toLowerCase().includes('qual é a diferença entre AI e machine learning?')) {
+                botResponse = 'Inteligência Artificial é o campo que estuda máquinas que imitam a inteligência humana, enquanto Machine Learning é uma subárea que ensina máquinas a aprender com dados!';
+            } else if (userMessage.toLowerCase().includes('sobre')) {
+                botResponse = 'Eu fui criado por Jerry de Jesus Gomes Alafo!';
+            } else if (userMessage.toLowerCase().includes('o que voce faz') || userMessage.toLowerCase().includes('o que pode fazer')|| userMessage.toLowerCase().includes('do que voce e capaz')|| userMessage.toLowerCase().includes('sua capacidade')) {
+                botResponse = 'Eu sou o Jarvis e posso ajudá-lo com o clima, cálculos, definir seu nome e cidade, alterar o idioma, e muito mais!';
+            } else if (isCalculationRequest(userMessage)) {
+                botResponse = calculate(userMessage);
+            } else if (userMessage.toLowerCase().includes('ajuda')) {
+                botResponse = getHelpResponse();
+            } else {
+                botResponse = `Desculpe, não entendi, sou apenas a versão mini. Você pode me perguntar sobre o clima que é minha especialidade, definir o idioma, ou fazer um cálculo. Digite "Ajuda" para saber os meus comandos`;
+            }
+            addMessage(botResponse, 'bot');
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function removeAccents(text) {
+            const accents = [
+                { base: 'a', letters: /á|ã|à|â|ä|å/gi },
+                { base: 'e', letters: /é|è|ê|ë/gi },
+                { base: 'i', letters: /í|ì|î|ï/gi },
+                { base: 'o', letters: /ó|ò|ô|õ|ö/gi },
+                { base: 'u', letters: /ú|ù|û|ü/gi },
+                { base: 'c', letters: /ç/gi },
+                { base: 'n', letters: /ñ/gi }
+            ];
+
+            accents.forEach(function(accent) {
+                text = text.replace(accent.letters, accent.base);
+            });
+
+            return text;
+        }
+
+        function isGreeting(message) {
+            const greetings = ['olá', 'kmk', 'na boa', 'mekie', 'hello', 'porreiro', 'oi', 'bom dia', 'boa tarde', 'boa noite', 'hey', 'eae', 'saudações'];
+            return greetings.some(greeting => message.toLowerCase().includes(greeting));
+        }
+
+        function getGreetingResponse() {
+            const hour = new Date().getHours();
+            let greeting = '';
+            
+            if (hour < 12) {
+                greeting = 'Bom dia! Como posso ajudar?';
+            } else if (hour < 18) {
+                greeting = 'Boa tarde! O que posso fazer por você?';
+            } else {
+                greeting = 'Boa noite! Como posso ajudar?';
+            }
+
+            const extraGreetings = ['Olá!', 'Oi, tudo bem?', 'Saudações!'];
+            greeting += ` ${extraGreetings[Math.floor(Math.random() * extraGreetings.length)]}`;
+
+            return greeting;
+        }
+
+        function isCalculationRequest(message) {
+            const calculationRegex = /\d+[\s*\+\-\*\/]+\d+/;
+            return calculationRegex.test(message);
+        }
+
+        function calculate(message) {
+            try {
+                const expression = message.replace(/[^0-9+\-*/. ]/g, '');
+                const result = eval(expression);
+                return `O resultado de ${message} é ${result}`;
+            } catch (error) {
+                return 'Desculpe, não consegui calcular essa expressão.';
+            }
+        }
+
+        async function getWeatherResponse(userMessage) {
+            const apiKey = 'd17e52f920c29945b8a72147ebb53283';
+            const city = userCity || userMessage.split(' ').slice(-1)[0];
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&lang=pt&units=metric`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data && data.weather && data.main) {
+                    return `O clima em ${data.name} é de ${data.weather[0].description} com temperatura de ${data.main.temp}°C.`;
+                } else {
+                    return 'Não foi possível obter informações do clima.';
+                }
+            } catch (error) {
+                return `Erro: ${error.message}`;
+            }
+        }
+
+                    function getHelpResponse() {
+                return `Aqui estão alguns comandos que você pode usar:\n
+            - "Olá", "Oi", "Bom dia", "Boa tarde", "Boa noite" para saudar.\n
+            - "Qual é o clima em [cidade]?" para saber o clima.\n
+            - "Qual é o meu nome?" para saber seu nome.\n
+            - "Qual é o nome do criador?" para saber quem me criou.\n
+            - "Definir idioma para [idioma]" para mudar o idioma.\n
+            - "Fazer um cálculo" para calcular algo.\n
+            - "Sua capacidade" para saber do que sou capaz.\n
+            - "Vamos jogar um jogo?" para sugerir um jogo.\n
+            - "Vamos jogar 20 perguntas" para jogar o jogo de 20 perguntas.\n
+            - "Você pode fazer um quiz?" para começar um quiz.\n
+            - "Me ajude com um enigma" para tentar resolver um enigma.\n
+            - "Qual é a sua habilidade especial?" para saber mais sobre minhas habilidades.\n
+            - "Me ensine uma curiosidade sobre o espaço" para aprender algo interessante sobre o espaço.\n
+            - "Você sabe fazer origami?" para aprender a fazer origami.\n
+            - "Me ensine um truque de mágica" para aprender um truque de mágica.\n
+            - "Me ajude a criar uma história" para criar uma história.\n
+            - "Me ajude a criar um personagem" para criar um personagem.\n
+            - "Você sabe fazer charadas?" para tentar resolver uma charada.\n
+            - "Vamos fazer um desafio de palavras?" para um desafio de palavras.\n
+            - "Qual é o maior número que você conhece?" para aprender sobre grandes números.\n
+            - "Qual é o seu superpoder?" para saber mais sobre minhas habilidades.\n
+            - "Me ajude a criar um roteiro de filme" para começar a criar um roteiro de filme.\n
+            - "Me conte uma história de terror" para ouvir uma história assustadora.\n
+            - "Vamos fazer um desafio de matemática?" para um desafio de matemática.\n
+            - "Qual é o seu maior talento?" para saber mais sobre minhas qualidades.\n
+            - "Quais são as regras do jogo da velha?" para aprender as regras do jogo da velha.\n
+            - "Vamos fazer um desafio de memória?" para um teste de memória.\n
+            - "Você pode desenhar?" para saber mais sobre desenhos.\n
+            - "Qual é a sua música favorita?" para saber sobre minhas preferências musicais.\n
+            - "Vamos fazer um desafio de palavras cruzadas?" para jogar palavras cruzadas.\n
+            - "Qual é a diferença entre um vírus e uma bactéria?" para entender mais sobre biologia.\n
+            - "Vamos fazer um desafio de conhecimentos gerais?" para um quiz de conhecimentos gerais.\n
+            - "Você pode me ajudar a aprender sobre astronomia?" para aprender sobre o espaço.\n
+            - "Me ajude a organizar meu dia" para obter dicas de produtividade.\n
+            - "Qual é a origem do nome da Terra?" para saber mais sobre a origem do nome do nosso planeta.\n
+            - "Me ajude a programar" para aprender programação.\n
+            - "Me fale sobre a história da humanidade" para aprender mais sobre a história do mundo.\n
+            - "Me dê uma dica de produtividade" para obter dicas sobre como ser mais produtivo.\n
+            - "Qual é o maior oceano do mundo?" para saber mais sobre o planeta.\n
+            - "Me ajude a criar um site" para aprender a criar sites.\n
+            - "Você pode me ensinar a programar em Python?" para aprender a programar em Python.`;
+            }
+
+
+        setLanguage('pt');
+    </script>
+
+</body>
+</html>
